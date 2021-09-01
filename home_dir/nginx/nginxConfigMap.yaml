@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginxConfigMap
+  namespace: demo
+data: null
+  - MONGO_URL: "mongodb//127.0.0.1:27017/test"
+  - PORT: 27017
+  - USER: admin
+  - PASSWORD: "rootroot"
