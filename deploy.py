@@ -52,9 +52,10 @@ dataService = """
       # kubernetes.io/ingress.class: nginx
       # kubernetes.io/tls-acme: "true"
     hosts:
-      - host: test.ae25bb730d6043dd9638.northeurope.aksapp.io
+      - host: {}
         paths:
         - path: /
+          pathType: ImplementationSpecific
           backend:
             serviceName: chart-example.local
             servicePort: 3000
@@ -98,24 +99,35 @@ def createConfigmap(imageName, namespace):
   metadata:
     name: {}ConfigMap
     namespace: {}
-  data: """.format(imageName, namespace, )
+  data:
+    master: refael """.format(imageName, namespace, )
   chdir('home_dir/'+imageName)
   with open(imageName+'ConfigMap.yaml', 'w+' ) as file:
-      docs = yaml.load(configmap)
+      docs = yaml.load(configmap,  Loader=yaml.FullLoader)
       yaml.dump(docs, file, sort_keys=False)
       chdir('../../')
       for env in open(imageName+".env","r+").readlines():
         file = open("home_dir/"+imageName+"/"+imageName+"ConfigMap.yaml","a+")
         tab = "  "
-        file.write(str(tab+"- "+env))
+        file.write(str(tab+env))
+  system('pwd')
+  chdir('home_dir/'+imageName)
+  system('kubectl create configmap {} --from-file={}ConfigMap.yaml -n {}' .format(imageName, imageName, namespace))
 
 
 parser = argparse.ArgumentParser(description='Personal information')
 parser.add_argument('-n', dest='namespace', type=str, help='namespace')
 parser.add_argument('-f', dest='file_path', type=str, help='file path')
+parser.add_argument('-c', dest='chartName', type=str, help='chart name')
+parser.add_argument('-ho', dest='host', type=str, help='host name')
+
+
 args = parser.parse_args()
 namespace = (args.namespace)
 imageFile = (args.file_path)
+chartName = (args.chartName)
+host = (args.host)
+
 
 
 input_file = open(imageFile,"r+")
@@ -132,10 +144,9 @@ for lines in input_file.read().split():
     
     createConfigmap(imageName, namespace)
 
-    file = open("home_dir/"+imageName+"/values.yaml","a+")
-    docs = yaml.load(dataService,  Loader=yaml.FullLoader)
+    file = open("values.yaml","a+")
+    docs = yaml.load(dataService.format("","","","",imageName,"","",""),  Loader=yaml.FullLoader)
     yaml.dump(docs, file,sort_keys=False)
     file.close()
-    system("helm install -f ./{}/values.yaml ".format(imageName))
-
-   
+    chdir("../")
+    system("helm upgrade {} {}  -n {} ".format(chartName, imageName, namespace))
