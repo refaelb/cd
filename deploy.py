@@ -46,7 +46,7 @@ dataService = """
     port: 3000
 
   ingress:
-    enabled: true
+    enabled: {}
     annotations: 
       kubernetes.io/ingress.class: addon-http-application-routing
       # kubernetes.io/ingress.class: nginx
@@ -91,6 +91,9 @@ dataService = """
 
 """
 
+
+
+
 ####configmap####
 def createConfigmap(imageName, namespace):
   configmap="""
@@ -115,6 +118,9 @@ def createConfigmap(imageName, namespace):
   system('kubectl create configmap {} --from-file={}ConfigMap.yaml -n {}' .format(imageName, imageName, namespace))
 
 
+
+
+
 parser = argparse.ArgumentParser(description='Personal information')
 parser.add_argument('-n', dest='namespace', type=str, help='namespace')
 parser.add_argument('-f', dest='file_path', type=str, help='file path')
@@ -127,6 +133,16 @@ namespace = (args.namespace)
 imageFile = (args.file_path)
 chartName = (args.chartName)
 host = (args.host)
+
+system('pwd')
+ingres=False
+for env in open("nginx.env","r+").readlines():
+    if "ingres" in env :
+      ingres=True
+      print(env)
+      break
+    
+    
 
 
 
@@ -145,7 +161,7 @@ for lines in input_file.read().split():
     createConfigmap(imageName, namespace)
 
     file = open("values.yaml","a+")
-    docs = yaml.load(dataService.format("","","","",imageName,"","",""),  Loader=yaml.FullLoader)
+    docs = yaml.load(dataService.format("","","","",ingres,imageName,"","",""),  Loader=yaml.FullLoader)
     yaml.dump(docs, file,sort_keys=False)
     file.close()
     chdir("../")
